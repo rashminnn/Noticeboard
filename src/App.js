@@ -1,14 +1,17 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import './App.css';
-import { login, logout, selectUser } from './features/userSlice';
-import { auth, onAuthStateChanged } from './firebase';
-import Login from './components/Login/Login';
-import Header from './components/Header/Header';
+import React, { useEffect } from 'react'
+import { useDispatch } from 'react-redux'
+import './App.css'
+import { login, logout } from './features/userSlice'
+import { auth, onAuthStateChanged } from './firebase'
+import SignInSide from './views/LoginForm'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Unauthorized from './views/Unauthorized'
+import Home from './views/Home'
+import Logs from './views/Logs'
+import RequireAuth from './components/RequireAuth'
 
 function App() {
-  const user = useSelector(selectUser);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch()
 
   useEffect(() => {
     onAuthStateChanged(auth, (userAuth) => {
@@ -18,34 +21,33 @@ function App() {
           login({
             email: userAuth.email,
             uid: userAuth.uid,
+            role: 'admin',
             displayName: userAuth.displayName,
             photoUrl: userAuth.photoURL,
           })
-        );
+        )
       } else {
-        dispatch(logout());
+        dispatch(logout())
       }
-    });
-    console.log('page loaded');
-  }, []);
+    })
+    console.log('page loaded')
+  }, [dispatch])
 
   return (
     <div className='app'>
-      <Header />
-
-      {!user ? (
-        <Login />
-      ) : (
-        <div className='app__body'>
-          <div>
-            <h1>Hello {user.displayName}!</h1>
-            <p>{user.email}</p>
-            <img src={user.photoUrl} alt='' />
-          </div>
-        </div>
-      )}
+      <Router>
+        <Routes>
+          <Route path='/login' element={<SignInSide />} />
+          <Route path='/unauthorized' element={<Unauthorized />} />
+          {/* protected routes */}
+          <Route element={<RequireAuth allowedRoles={['admin']} />}>
+            <Route path='/' element={<Home />} />
+            <Route path='/logs' element={<Logs />} />
+          </Route>
+        </Routes>
+      </Router>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
